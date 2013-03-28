@@ -968,6 +968,7 @@ gd_sync_task_begin (dict_t *op_ctx, rpcsvc_request_t * req)
                              "Please try again after sometime.");
                 goto out;
         }
+        synclock_lock (&conf->big_lock);
 
         /* storing op globally to access in synctask code paths
          * This is still acceptable, as we are performing this under
@@ -1008,6 +1009,7 @@ out:
         (void) gd_unlock_op_phase (&conf->xaction_peers, op, ret, req,
                                    op_ctx, op_errstr, npeers);
 
+        synclock_unlock (&conf->big_lock);
         if (req_dict)
                 dict_unref (req_dict);
 

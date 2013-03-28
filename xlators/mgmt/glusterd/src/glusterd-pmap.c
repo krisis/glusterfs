@@ -282,6 +282,7 @@ out:
 int
 gluster_pmap_portbybrick (rpcsvc_request_t *req)
 {
+        glusterd_conf_t          *priv = THIS->private;
         pmap_port_by_brick_req    args = {0,};
         pmap_port_by_brick_rsp    rsp  = {0,};
         char                     *brick = NULL;
@@ -297,6 +298,7 @@ gluster_pmap_portbybrick (rpcsvc_request_t *req)
 
         brick = args.brick;
 
+        synclock_lock (&priv->big_lock);
         port = pmap_registry_search (THIS, brick, GF_PMAP_PORT_BRICKSERVER);
 
         if (!port)
@@ -307,6 +309,7 @@ gluster_pmap_portbybrick (rpcsvc_request_t *req)
 fail:
         glusterd_submit_reply (req, &rsp, NULL, 0, NULL,
                                (xdrproc_t)xdr_pmap_port_by_brick_rsp);
+        synclock_unlock (&priv->big_lock);
         free (args.brick);//malloced by xdr
 
         return 0;
@@ -316,6 +319,7 @@ fail:
 int
 gluster_pmap_brickbyport (rpcsvc_request_t *req)
 {
+        glusterd_conf_t          *priv = THIS->private;
         pmap_brick_by_port_req    args = {0,};
         pmap_brick_by_port_rsp    rsp  = {0,};
         int                       ret = -1;
@@ -327,6 +331,7 @@ gluster_pmap_brickbyport (rpcsvc_request_t *req)
                 goto fail;
         }
 
+        synclock_lock (&priv->big_lock);
         rsp.brick = pmap_registry_search_by_port (THIS, args.port);
         if (!rsp.brick) {
                 rsp.op_ret = -1;
@@ -336,6 +341,7 @@ fail:
 
         glusterd_submit_reply (req, &rsp, NULL, 0, NULL,
                                (xdrproc_t)xdr_pmap_brick_by_port_rsp);
+        synclock_unlock (&priv->big_lock);
 
         return 0;
 }
@@ -352,6 +358,7 @@ glusterd_brick_update_signin (glusterd_brickinfo_t *brickinfo,
 int
 gluster_pmap_signup (rpcsvc_request_t *req)
 {
+        glusterd_conf_t          *priv = THIS->private;
         pmap_signup_req    args = {0,};
         pmap_signup_rsp    rsp  = {0,};
         int                ret = -1;
@@ -364,12 +371,14 @@ gluster_pmap_signup (rpcsvc_request_t *req)
                 goto fail;
         }
 
+        synclock_lock (&priv->big_lock);
         rsp.op_ret = pmap_registry_bind (THIS, args.port, args.brick,
                                          GF_PMAP_PORT_BRICKSERVER, req->trans);
 
 fail:
         glusterd_submit_reply (req, &rsp, NULL, 0, NULL,
                                (xdrproc_t)xdr_pmap_signup_rsp);
+        synclock_unlock (&priv->big_lock);
         free (args.brick);//malloced by xdr
 
         return 0;
@@ -378,6 +387,7 @@ fail:
 int
 gluster_pmap_signin (rpcsvc_request_t *req)
 {
+        glusterd_conf_t          *priv = THIS->private;
         pmap_signin_req    args = {0,};
         pmap_signin_rsp    rsp  = {0,};
         glusterd_brickinfo_t *brickinfo = NULL;
@@ -390,6 +400,7 @@ gluster_pmap_signin (rpcsvc_request_t *req)
                 goto fail;
         }
 
+        synclock_lock (&priv->big_lock);
         rsp.op_ret = pmap_registry_bind (THIS, args.port, args.brick,
                                          GF_PMAP_PORT_BRICKSERVER, req->trans);
 
@@ -398,6 +409,7 @@ gluster_pmap_signin (rpcsvc_request_t *req)
 fail:
         glusterd_submit_reply (req, &rsp, NULL, 0, NULL,
                                (xdrproc_t)xdr_pmap_signin_rsp);
+        synclock_unlock (&priv->big_lock);
         free (args.brick);//malloced by xdr
 
         if (!ret)
@@ -411,6 +423,7 @@ fail:
 int
 gluster_pmap_signout (rpcsvc_request_t *req)
 {
+        glusterd_conf_t          *priv = THIS->private;
         pmap_signout_req    args = {0,};
         pmap_signout_rsp    rsp  = {0,};
         int                 ret = -1;
@@ -424,6 +437,7 @@ gluster_pmap_signout (rpcsvc_request_t *req)
                 goto fail;
         }
 
+        synclock_lock (&priv->big_lock);
         rsp.op_ret = pmap_registry_remove (THIS, args.port, args.brick,
                                            GF_PMAP_PORT_BRICKSERVER, req->trans);
 
@@ -432,6 +446,7 @@ gluster_pmap_signout (rpcsvc_request_t *req)
 fail:
         glusterd_submit_reply (req, &rsp, NULL, 0, NULL,
                                (xdrproc_t)xdr_pmap_signout_rsp);
+        synclock_unlock (&priv->big_lock);
         free (args.brick);//malloced by xdr
 
         if (!ret)
@@ -461,4 +476,5 @@ struct rpcsvc_program gluster_pmap_prog = {
         .progver   = GLUSTER_PMAP_VERSION,
         .actors    = gluster_pmap_actors,
         .numactors = GF_PMAP_MAXVALUE,
+        .synctask  = _gf_true,
 };

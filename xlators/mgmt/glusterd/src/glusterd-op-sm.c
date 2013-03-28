@@ -3458,6 +3458,7 @@ glusterd_op_txn_complete ()
         glusterd_op_reset_ctx ();
         glusterd_op_clear_errstr ();
 
+        synclock_unlock (&priv->big_lock);
         ret = glusterd_unlock (MY_UUID);
 
         /* unlock cant/shouldnt fail here!! */
@@ -3480,7 +3481,6 @@ glusterd_op_txn_complete ()
 
         if (op_errstr && (strcmp (op_errstr, "")))
                 GF_FREE (op_errstr);
-
 
         if (priv->pending_quorum_action)
                 glusterd_do_quorum_action ();

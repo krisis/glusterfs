@@ -724,6 +724,7 @@ glusterd_op_txn_begin (rpcsvc_request_t *req, glusterd_op_t op, void *ctx,
                 goto out;
         }
 
+        synclock_lock (&priv->big_lock);
         locked = 1;
         gf_log (this->name, GF_LOG_DEBUG, "Acquired lock on localhost");
 
@@ -740,8 +741,10 @@ glusterd_op_txn_begin (rpcsvc_request_t *req, glusterd_op_t op, void *ctx,
 
 
 out:
-        if (locked && ret)
+        if (locked && ret) {
+                synclock_unlock (&priv->big_lock);
                 glusterd_unlock (MY_UUID);
+        }
 
         gf_log (this->name, GF_LOG_DEBUG, "Returning %d", ret);
         return ret;
