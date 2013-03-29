@@ -5,7 +5,7 @@ glusterd_la_LDFLAGS = -module -avoid-version
 if ENABLE_BD_XLATOR
 glusterd_la_LDFLAGS += -llvm2app
 endif
-glusterd_la_SOURCES = glusterd.c glusterd-handler.c glusterd-sm.c \
+glusterd_la_SOURCES = glusterd.c glusterd-handler.c glusterd-cli-handler.c glusterd-sm.c \
 	glusterd-op-sm.c glusterd-utils.c glusterd-rpc-ops.c glusterd-peer-rpc-ops.c \
 	glusterd-store.c glusterd-handshake.c glusterd-pmap.c \
 	glusterd-volgen.c glusterd-rebalance.c glusterd-quota.c \
