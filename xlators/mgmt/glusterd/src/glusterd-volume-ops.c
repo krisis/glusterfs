@@ -1637,7 +1637,7 @@ glusterd_op_start_volume (dict_t *dict, char **op_errstr)
         }
 
         list_for_each_entry (brickinfo, &volinfo->bricks, brick_list) {
-                ret = glusterd_brick_start (volinfo, brickinfo, _gf_true);
+                ret = glusterd_brick_start (volinfo, brickinfo, _gf_false);
                 if (ret)
                         goto out;
         }

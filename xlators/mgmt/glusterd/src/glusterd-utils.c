@@ -3964,7 +3964,7 @@ glusterd_restart_bricks (glusterd_conf_t *conf)
                 }
 
                 list_for_each_entry (brickinfo, &volinfo->bricks, brick_list) {
-                        glusterd_brick_start (volinfo, brickinfo, _gf_true);
+                        glusterd_brick_start (volinfo, brickinfo, _gf_false);
                 }
         }
 
