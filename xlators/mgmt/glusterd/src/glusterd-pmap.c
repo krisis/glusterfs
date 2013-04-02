@@ -280,7 +280,7 @@ out:
 }
 
 int
-gluster_pmap_portbybrick (rpcsvc_request_t *req)
+__gluster_pmap_portbybrick (rpcsvc_request_t *req)
 {
         pmap_port_by_brick_req    args = {0,};
         pmap_port_by_brick_rsp    rsp  = {0,};
@@ -314,7 +314,21 @@ fail:
 
 
 int
-gluster_pmap_brickbyport (rpcsvc_request_t *req)
+gluster_pmap_portbybrick (rpcsvc_request_t *req)
+{
+        glusterd_conf_t     *priv = THIS->private;
+        int                 ret   = -1;
+
+        synclock_lock (&priv->big_lock);
+        ret = __gluster_pmap_portbybrick (req);
+        synclock_unlock (&priv->big_lock);
+
+        return ret;
+}
+
+
+int
+__gluster_pmap_brickbyport (rpcsvc_request_t *req)
 {
         pmap_brick_by_port_req    args = {0,};
         pmap_brick_by_port_rsp    rsp  = {0,};
@@ -340,6 +354,21 @@ fail:
         return 0;
 }
 
+
+int
+gluster_pmap_brickbyport (rpcsvc_request_t *req)
+{
+        glusterd_conf_t     *priv = THIS->private;
+        int                 ret   = -1;
+
+        synclock_lock (&priv->big_lock);
+        ret = __gluster_pmap_brickbyport (req);
+        synclock_unlock (&priv->big_lock);
+
+        return ret;
+}
+
+
 static int
 glusterd_brick_update_signin (glusterd_brickinfo_t *brickinfo,
                               gf_boolean_t value)
@@ -350,7 +379,7 @@ glusterd_brick_update_signin (glusterd_brickinfo_t *brickinfo,
 }
 
 int
-gluster_pmap_signup (rpcsvc_request_t *req)
+__gluster_pmap_signup (rpcsvc_request_t *req)
 {
         pmap_signup_req    args = {0,};
         pmap_signup_rsp    rsp  = {0,};
@@ -376,7 +405,20 @@ fail:
 }
 
 int
-gluster_pmap_signin (rpcsvc_request_t *req)
+gluster_pmap_signup (rpcsvc_request_t *req)
+{
+        glusterd_conf_t     *priv = THIS->private;
+        int                 ret   = -1;
+
+        synclock_lock (&priv->big_lock);
+        ret = __gluster_pmap_signup (req);
+        synclock_unlock (&priv->big_lock);
+
+        return ret;
+}
+
+int
+__gluster_pmap_signin (rpcsvc_request_t *req)
 {
         pmap_signin_req    args = {0,};
         pmap_signin_rsp    rsp  = {0,};
@@ -407,9 +449,22 @@ fail:
 }
 
 
+int
+gluster_pmap_signin (rpcsvc_request_t *req)
+{
+        glusterd_conf_t     *priv = THIS->private;
+        int                 ret   = -1;
+
+        synclock_lock (&priv->big_lock);
+        ret = __gluster_pmap_signin (req);
+        synclock_unlock (&priv->big_lock);
+
+        return ret;
+}
+
 
 int
-gluster_pmap_signout (rpcsvc_request_t *req)
+__gluster_pmap_signout (rpcsvc_request_t *req)
 {
         pmap_signout_req    args = {0,};
         pmap_signout_rsp    rsp  = {0,};
@@ -438,6 +493,19 @@ fail:
                 glusterd_brick_update_signin (brickinfo, _gf_false);
 
         return 0;
+}
+
+int
+gluster_pmap_signout (rpcsvc_request_t *req)
+{
+        glusterd_conf_t     *priv = THIS->private;
+        int                 ret   = -1;
+
+        synclock_lock (&priv->big_lock);
+        ret = __gluster_pmap_signout (req);
+        synclock_unlock (&priv->big_lock);
+
+        return ret;
 }
 
 rpcsvc_actor_t gluster_pmap_actors[] = {
