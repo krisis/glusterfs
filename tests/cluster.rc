@@ -2,13 +2,16 @@
 
 CLUSTER_PFX="127.1.1"; # ".x" for each glusterd
 CLUSTER_COUNT=1; # Just initial definition
+BKEND_TYPE=""
 
 function launch_cluster() {
     local count=$1;
+    local type=$2;
 
     CLUSTER_COUNT=$count;
+    BKEND_TYPE=$type;
 
-    define_backends $count;
+    define_backends $count $type;
     define_hosts $count;
     define_glusterds $count;
     define_clis $count;
@@ -19,6 +22,7 @@ function launch_cluster() {
 
 function define_backends() {
     local b;
+    local type=$1; # type is a flag. If set we use ramdisks for backends
 
     for i in `seq 1 $count`; do
 	eval "B$i=$B0/$i";
@@ -28,6 +32,16 @@ function define_backends() {
 	b="B$i";
 	mkdir -pv ${!b}/glusterd;
     done
+
+    if [ -z "$type" ]; then
+    return;
+    fi
+
+    for i in `seq 1 $count`; do
+    b="B$i";
+    mkfs.xfs -f /dev/ram$i;
+    mount /dev/ram$i ${!b}/glusterd;
+    done;
 }
 
 
@@ -104,3 +118,12 @@ function define_clis() {
     done
 }
 
+function cluster_cleanup () {
+    if [ -z "$BKEND_TYPE" ]; then
+        return;
+    fi
+
+    for i in `seq 1 $CLUSTER_COUNT`; do
+    umount -l /dev/ram$i;
+    done;
+}
