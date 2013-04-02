@@ -153,6 +153,7 @@ typedef struct {
         xlator_t       *xl;  /* Should be set to 'THIS' before creating thread */
         gf_boolean_t   pending_quorum_action;
         dict_t             *opts;
+        synclock_t      big_lock;
 } glusterd_conf_t;
 
 
