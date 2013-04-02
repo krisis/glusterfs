@@ -23,6 +23,7 @@
 #include "timer.h"
 #include "defaults.h"
 #include "compat.h"
+#include "syncop.h"
 #include "run.h"
 #include "compat-errno.h"
 #include "statedump.h"
@@ -1153,6 +1154,7 @@ glusterd_brick_connect (glusterd_volinfo_t  *volinfo,
         char                    socketpath[PATH_MAX] = {0};
         dict_t                  *options = NULL;
         struct rpc_clnt         *rpc = NULL;
+        glusterd_conf_t         *priv = THIS->private;
 
         GF_ASSERT (volinfo);
         GF_ASSERT (brickinfo);
@@ -1171,9 +1173,11 @@ glusterd_brick_connect (glusterd_volinfo_t  *volinfo,
                                                              socketpath, 600);
                 if (ret)
                         goto out;
+                synclock_unlock (&priv->big_lock);
                 ret = glusterd_rpc_create (&rpc, options,
                                            glusterd_brick_rpc_notify,
                                            brickinfo);
+                synclock_lock (&priv->big_lock);
                 if (ret)
                         goto out;
                 brickinfo->rpc = rpc;
@@ -1322,10 +1326,14 @@ glusterd_volume_start_glusterfs (glusterd_volinfo_t  *volinfo,
                 runner_add_arg (&runner, "--mem-accounting");
 
         runner_log (&runner, "", GF_LOG_DEBUG, "Starting GlusterFS");
-        if (wait)
+        if (wait) {
+                synclock_unlock (&priv->big_lock);
                 ret = runner_run (&runner);
-        else
+                synclock_lock (&priv->big_lock);
+
+        } else {
                 ret = runner_run_nowait (&runner);
+        }
 
         if (ret)
                 goto out;
@@ -2301,6 +2309,15 @@ does_gd_meet_server_quorum (xlator_t *this)
         in = _gf_true;
 out:
         return in;
+}
+
+void
+glusterd_spawn_daemons ()
+{
+        glusterd_conf_t *conf = THIS->private;
+
+        glusterd_restart_gsyncds (conf);
+        glusterd_restart_rebalance (conf);
 }
 
 void
@@ -3299,6 +3316,7 @@ glusterd_nodesvc_connect (char *server, char *socketpath) {
         int                     ret = 0;
         dict_t                  *options = NULL;
         struct rpc_clnt         *rpc = NULL;
+        glusterd_conf_t         *priv = THIS->private;
 
         rpc = glusterd_nodesvc_get_rpc (server);
 
@@ -3312,9 +3330,11 @@ glusterd_nodesvc_connect (char *server, char *socketpath) {
                                                              socketpath, 600);
                 if (ret)
                         goto out;
+                synclock_unlock (&priv->big_lock);
                 ret = glusterd_rpc_create (&rpc, options,
                                            glusterd_nodesvc_rpc_notify,
                                            server);
+                synclock_lock (&priv->big_lock);
                 if (ret)
                         goto out;
                 (void) glusterd_nodesvc_set_rpc (server, rpc);
@@ -3958,11 +3978,6 @@ glusterd_restart_bricks (glusterd_conf_t *conf)
                 if (volinfo->status != GLUSTERD_STATUS_STARTED)
                         continue;
                 start_nodesvcs = _gf_true;
-                if (glusterd_is_volume_in_server_quorum (volinfo)) {
-                        //these bricks will be restarted once the quorum is met
-                        continue;
-                }
-
                 list_for_each_entry (brickinfo, &volinfo->bricks, brick_list) {
                         glusterd_brick_start (volinfo, brickinfo, _gf_true);
                 }
@@ -5486,7 +5501,9 @@ glusterd_start_gsync (glusterd_volinfo_t *master_vol, char *slave,
         runner_argprintf (&runner, ":%s", master_vol->volname);
         runner_add_args  (&runner, slave, "--config-set", "session-owner",
                           uuid_str, NULL);
+        synclock_unlock (&priv->big_lock);
         ret = runner_run (&runner);
+        synclock_lock (&priv->big_lock);
         if (ret == -1) {
                 errcode = -1;
                 goto out;
@@ -5497,7 +5514,9 @@ glusterd_start_gsync (glusterd_volinfo_t *master_vol, char *slave,
         runner_argprintf (&runner, "%s/"GSYNC_CONF, priv->workdir);
         runner_argprintf (&runner, ":%s", master_vol->volname);
         runner_add_arg   (&runner, slave);
+        synclock_unlock (&priv->big_lock);
         ret = runner_run (&runner);
+        synclock_lock (&priv->big_lock);
         if (ret == -1) {
                 gf_asprintf (op_errstr, GEOREP" start failed for %s %s",
                              master_vol->volname, slave);
@@ -5959,7 +5978,6 @@ glusterd_restart_rebalance (glusterd_conf_t *conf)
         }
         return ret;
 }
-
 
 void
 glusterd_volinfo_reset_defrag_stats (glusterd_volinfo_t *volinfo)

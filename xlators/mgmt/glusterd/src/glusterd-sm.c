@@ -1075,8 +1075,10 @@ glusterd_friend_sm ()
 
         ret = 0;
 out:
-        if (quorum_action)
+        if (quorum_action) {
+                glusterd_spawn_daemons ();
                 glusterd_do_quorum_action ();
+        }
         return ret;
 }
 

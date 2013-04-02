@@ -356,6 +356,8 @@ glusterd_delete_brick (glusterd_volinfo_t* volinfo,
                        glusterd_brickinfo_t *brickinfo);
 int32_t
 glusterd_delete_all_bricks (glusterd_volinfo_t* volinfo);
+void
+glusterd_spawn_daemons (void);
 int
 glusterd_restart_gsyncds (glusterd_conf_t *conf);
 int
