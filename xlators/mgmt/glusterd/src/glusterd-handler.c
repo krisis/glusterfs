@@ -500,7 +500,7 @@ out:
 }
 
 int
-glusterd_handle_cluster_lock (rpcsvc_request_t *req)
+__glusterd_handle_cluster_lock (rpcsvc_request_t *req)
 {
         gd1_mgmt_cluster_lock_req       lock_req = {{0},};
         int32_t                         ret = -1;
@@ -549,6 +549,19 @@ out:
 
         glusterd_friend_sm ();
         glusterd_op_sm ();
+
+        return ret;
+}
+
+int
+glusterd_handle_cluster_lock (rpcsvc_request_t *req)
+{
+        glusterd_conf_t *priv = THIS->private;
+        int             ret   = -1;
+
+        synclock_lock (&priv->big_lock);
+        ret = __glusterd_handle_cluster_lock (req);
+        synclock_unlock (&priv->big_lock);
 
         return ret;
 }
@@ -604,7 +617,7 @@ out:
 }
 
 int
-glusterd_handle_stage_op (rpcsvc_request_t *req)
+__glusterd_handle_stage_op (rpcsvc_request_t *req)
 {
         int32_t                         ret = -1;
         glusterd_req_ctx_t              *req_ctx = NULL;
@@ -649,7 +662,21 @@ glusterd_handle_stage_op (rpcsvc_request_t *req)
 }
 
 int
-glusterd_handle_commit_op (rpcsvc_request_t *req)
+glusterd_handle_stage_op (rpcsvc_request_t *req)
+{
+        glusterd_conf_t *priv = THIS->private;
+        int             ret   = -1;
+
+        synclock_lock (&priv->big_lock);
+        ret = __glusterd_handle_stage_op (req);
+        synclock_unlock (&priv->big_lock);
+
+        return ret;
+}
+
+
+int
+__glusterd_handle_commit_op (rpcsvc_request_t *req)
 {
         int32_t                         ret = -1;
         glusterd_req_ctx_t              *req_ctx = NULL;
@@ -696,6 +723,19 @@ out:
         free (op_req.buf.buf_val);//malloced by xdr
         glusterd_friend_sm ();
         glusterd_op_sm ();
+        return ret;
+}
+
+int
+glusterd_handle_commit_op (rpcsvc_request_t *req)
+{
+        glusterd_conf_t *priv = THIS->private;
+        int             ret   = -1;
+
+        synclock_lock (&priv->big_lock);
+        ret = __glusterd_handle_commit_op (req);
+        synclock_unlock (&priv->big_lock);
+
         return ret;
 }
 
@@ -1592,7 +1632,7 @@ glusterd_op_unlock_send_resp (rpcsvc_request_t *req, int32_t status)
 }
 
 int
-glusterd_handle_cluster_unlock (rpcsvc_request_t *req)
+__glusterd_handle_cluster_unlock (rpcsvc_request_t *req)
 {
         gd1_mgmt_cluster_unlock_req     unlock_req = {{0}, };
         int32_t                         ret = -1;
@@ -1639,6 +1679,19 @@ glusterd_handle_cluster_unlock (rpcsvc_request_t *req)
 out:
         glusterd_friend_sm ();
         glusterd_op_sm ();
+
+        return ret;
+}
+
+int
+glusterd_handle_cluster_unlock (rpcsvc_request_t *req)
+{
+        glusterd_conf_t *priv = THIS->private;
+        int             ret   = -1;
+
+        synclock_lock (&priv->big_lock);
+        ret = __glusterd_handle_cluster_unlock (req);
+        synclock_unlock (&priv->big_lock);
 
         return ret;
 }
