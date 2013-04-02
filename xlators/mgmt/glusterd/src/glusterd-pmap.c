@@ -529,4 +529,5 @@ struct rpcsvc_program gluster_pmap_prog = {
         .progver   = GLUSTER_PMAP_VERSION,
         .actors    = gluster_pmap_actors,
         .numactors = GF_PMAP_MAXVALUE,
+        .synctask  = _gf_true,
 };

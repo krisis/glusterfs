@@ -3477,6 +3477,7 @@ glusterd_op_txn_complete ()
                 //Ignore this error, else state machine blocks
                 ret = 0;
         }
+        synclock_unlock (&priv->big_lock);
 
         if (op_errstr && (strcmp (op_errstr, "")))
                 GF_FREE (op_errstr);

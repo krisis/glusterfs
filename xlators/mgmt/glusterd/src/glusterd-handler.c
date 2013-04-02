@@ -467,6 +467,7 @@ glusterd_op_txn_begin (rpcsvc_request_t *req, glusterd_op_t op, void *ctx,
         priv = this->private;
         GF_ASSERT (priv);
 
+        synclock_lock (&priv->big_lock);
         ret = glusterd_lock (MY_UUID);
         if (ret) {
                 gf_log (this->name, GF_LOG_ERROR,
@@ -492,8 +493,10 @@ glusterd_op_txn_begin (rpcsvc_request_t *req, glusterd_op_t op, void *ctx,
 
 
 out:
-        if (locked && ret)
+        if (locked && ret) {
                 glusterd_unlock (MY_UUID);
+                synclock_unlock (&priv->big_lock);
+        }
 
         gf_log (this->name, GF_LOG_DEBUG, "Returning %d", ret);
         return ret;

@@ -947,6 +947,7 @@ gd_sync_task_begin (dict_t *op_ctx, rpcsvc_request_t * req)
         int32_t                     tmp_op          = 0;
         char                        *op_errstr      = NULL;
         xlator_t                    *this           = NULL;
+        gf_boolean_t                locked          = _gf_false;
 
         this = THIS;
         GF_ASSERT (this);
@@ -961,6 +962,8 @@ gd_sync_task_begin (dict_t *op_ctx, rpcsvc_request_t * req)
         }
 
         op = tmp_op;
+        synclock_lock (&conf->big_lock);
+        locked = _gf_true;
         ret = glusterd_lock (MY_UUID);
         if (ret) {
                 gf_log (this->name, GF_LOG_ERROR, "Unable to acquire lock");
@@ -1008,6 +1011,8 @@ out:
         (void) gd_unlock_op_phase (&conf->xaction_peers, op, ret, req,
                                    op_ctx, op_errstr, npeers);
 
+        if (locked)
+                synclock_unlock (&conf->big_lock);
         if (req_dict)
                 dict_unref (req_dict);
 
