@@ -1724,7 +1724,7 @@ out:
 }
 
 int
-glusterd_handle_incoming_friend_req (rpcsvc_request_t *req)
+__glusterd_handle_incoming_friend_req (rpcsvc_request_t *req)
 {
         int32_t                 ret = -1;
         gd1_mgmt_friend_req     friend_req = {{0},};
@@ -1763,7 +1763,20 @@ out:
 }
 
 int
-glusterd_handle_incoming_unfriend_req (rpcsvc_request_t *req)
+glusterd_handle_incoming_friend_req (rpcsvc_request_t *req)
+{
+        glusterd_conf_t *priv = THIS->private;
+        int             ret   = -1;
+
+        synclock_lock (&priv->big_lock);
+        ret = __glusterd_handle_incoming_friend_req (req);
+        synclock_unlock (&priv->big_lock);
+
+        return ret;
+}
+
+int
+__glusterd_handle_incoming_unfriend_req (rpcsvc_request_t *req)
 {
         int32_t                 ret = -1;
         gd1_mgmt_friend_req     friend_req = {{0},};
@@ -1797,6 +1810,18 @@ out:
         glusterd_friend_sm ();
         glusterd_op_sm ();
 
+        return ret;
+}
+
+int
+glusterd_handle_incoming_unfriend_req (rpcsvc_request_t *req)
+{
+        glusterd_conf_t *priv = THIS->private;
+        int             ret   = -1;
+
+        synclock_lock (&priv->big_lock);
+        ret = __glusterd_handle_incoming_unfriend_req (req);
+        synclock_unlock (&priv->big_lock);
         return ret;
 }
 
@@ -1846,7 +1871,7 @@ out:
 }
 
 int
-glusterd_handle_friend_update (rpcsvc_request_t *req)
+__glusterd_handle_friend_update (rpcsvc_request_t *req)
 {
         int32_t                 ret = -1;
         gd1_mgmt_friend_update     friend_req = {{0},};
@@ -1983,7 +2008,19 @@ out:
 }
 
 int
-glusterd_handle_probe_query (rpcsvc_request_t *req)
+glusterd_handle_friend_update (rpcsvc_request_t *req)
+{
+        glusterd_conf_t *priv = THIS->private;
+        int             ret   = -1;
+
+        synclock_lock (&priv->big_lock);
+        ret = __glusterd_handle_friend_update (req);
+        synclock_unlock (&priv->big_lock);
+        return ret;
+}
+
+int
+__glusterd_handle_probe_query (rpcsvc_request_t *req)
 {
         int32_t                         ret = -1;
         xlator_t                        *this = NULL;
@@ -2073,6 +2110,18 @@ out:
 
         glusterd_friend_sm ();
         glusterd_op_sm ();
+
+        return ret;
+}
+
+int glusterd_handle_probe_query (rpcsvc_request_t *req)
+{
+        glusterd_conf_t *priv = THIS->private;
+        int             ret   = -1;
+
+        synclock_lock (&priv->big_lock);
+        ret = __glusterd_handle_probe_query (req);
+        synclock_unlock (&priv->big_lock);
 
         return ret;
 }
